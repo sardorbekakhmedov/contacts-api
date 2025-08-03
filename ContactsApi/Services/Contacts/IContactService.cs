@@ -15,7 +15,7 @@ public interface IContactService
     ValueTask<ViewContact> GetSingleAsync(Guid id, CancellationToken cancellationToken = default);
     ValueTask<ViewContact> UpdateAsync(Guid id, UpdateContact model, CancellationToken cancellationToken = default);
     ValueTask<ViewContact> UpdatePhoneNumberAsync(Guid id, PatchContact model, CancellationToken cancellationToken = default);
-    ValueTask<bool> ExistsPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default);
-    ValueTask<bool> ExistsEmailAsync(string email, CancellationToken cancellationToken = default);
+    ValueTask<bool> ExistsPhoneNumberAsync(string phoneNumber, Guid? excludeId = null, CancellationToken cancellationToken = default);
+    ValueTask<bool> ExistsEmailAsync(string email, Guid? excludeId = null, CancellationToken cancellationToken = default);
     ValueTask DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 }

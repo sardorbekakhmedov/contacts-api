@@ -35,7 +35,7 @@ public class CreateContactValidator : AbstractValidator<CreateContactDto>
             .WithMessage("Email must not exceed 100 characters.")
             .MustAsync(async (email, cancellationToken) =>
             {
-                return !await contactService.ExistsEmailAsync(email, cancellationToken);
+                return !await contactService.ExistsEmailAsync(email, null, cancellationToken);
             })
             .WithMessage($"This email is already in use.");
 
@@ -46,7 +46,7 @@ public class CreateContactValidator : AbstractValidator<CreateContactDto>
             .WithMessage("Phone number must start with 998, digits only — no '+' (e.g., 998901234567).")
             .MustAsync(async (phoneNumber, cancellationToken) =>
             {
-                return !await contactService.ExistsPhoneNumberAsync(phoneNumber, cancellationToken);
+                return !await contactService.ExistsPhoneNumberAsync(phoneNumber, null, cancellationToken);
             })
             .WithMessage($"This phoneNumber is already in use.");;
 

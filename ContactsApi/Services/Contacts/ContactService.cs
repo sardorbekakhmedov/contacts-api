@@ -11,15 +11,23 @@ public class ContactService(IMapper mapper) : IContactService
 {
     public static List<Contact> contacts = new();
 
-    public async ValueTask<bool> ExistsPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default)
+    public async ValueTask<bool> ExistsPhoneNumberAsync(string phoneNumber, Guid? excludeId = null, CancellationToken cancellationToken = default)
     {
         await Task.Yield();
+        
+        if (excludeId is not null)
+            return contacts.Any(c => c.PhoneNumber.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase) && c.Id != excludeId);
+
         return contacts.Any(c => c.PhoneNumber.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase));
     }
 
-    public async ValueTask<bool> ExistsEmailAsync(string email, CancellationToken cancellationToken = default)
+    public async ValueTask<bool> ExistsEmailAsync(string email, Guid? excludeId = null, CancellationToken cancellationToken = default)
     {
         await Task.Yield();
+
+        if(excludeId is not null)
+            return contacts.Any(c => c.Email.Equals(email, StringComparison.OrdinalIgnoreCase) && c.Id != excludeId);
+
         return contacts.Any(c => c.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -27,10 +35,10 @@ public class ContactService(IMapper mapper) : IContactService
     {
         await Task.Yield();
 
-        if (await ExistsEmailAsync(model.Email, cancellationToken))
+        if (await ExistsEmailAsync(model.Email, null, cancellationToken))
             throw new CustomConflictException($"Email '{model.Email}' is already in use.");
 
-        if (await ExistsPhoneNumberAsync(model.PhoneNumber, cancellationToken))
+        if (await ExistsPhoneNumberAsync(model.PhoneNumber, null, cancellationToken))
             throw new CustomConflictException($"Phone number '{model.PhoneNumber}' is already in use.");
 
         var newContact = mapper.Map<Contact>(model);
@@ -60,8 +68,27 @@ public class ContactService(IMapper mapper) : IContactService
         if (!string.IsNullOrWhiteSpace(queryParams.Email))
             query = query.Where(c => c.Email.ToLower().Contains(queryParams.Email.ToLower(), StringComparison.OrdinalIgnoreCase));
 
-         if (!string.IsNullOrWhiteSpace(queryParams.PhonNumber))
+        if (!string.IsNullOrWhiteSpace(queryParams.PhonNumber))
             query = query.Where(c => c.PhoneNumber.ToLower().Contains(queryParams.PhonNumber.ToLower(), StringComparison.OrdinalIgnoreCase));
+            
+        if (!string.IsNullOrWhiteSpace(queryParams.Tag))
+        {
+            query = query.Where(c => c.Tags.Contains(queryParams.Tag, StringComparer.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrEmpty(queryParams.SortBy))
+        {
+            query = queryParams.SortBy.ToLower() switch
+            {
+                "firstname" => queryParams.SortOrder == "desc"
+                                ? query.OrderByDescending(c => c.FirstName)
+                                : query.OrderBy(c => c.FirstName),
+                "createdat" => queryParams.SortOrder == "desc"
+                                ? query.OrderByDescending(c => c.CreateAt)
+                                : query.OrderBy(c => c.CreateAt),
+                _ => query
+            };
+        }
 
         var pagedContacts = query
             .Skip(queryParams.Skip)
@@ -93,7 +120,7 @@ public class ContactService(IMapper mapper) : IContactService
         await Task.Yield();
 
         var contactToUpdate = contacts.SingleOrDefault(c => c.Id == id) ??
-            throw new CustomNotFoundException($"{nameof(Contact)} with id '{id}' not found."); ;
+            throw new CustomNotFoundException($"{nameof(Contact)} with id '{id}' not found."); 
 
         mapper.Map(model, contactToUpdate);
         contactToUpdate.UpdatedAt = DateTime.Now;

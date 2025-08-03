@@ -23,15 +23,15 @@ public class AutoValidationFilter(IServiceProvider serviceProvider) : IAsyncActi
 
             if (canBeValidated && serviceProvider.GetService(parametrGenericType) is IValidator validator)
             {
-                var value = context.ActionArguments[paramter.Name];
+                if (context.ActionArguments.TryGetValue(paramter.Name!, out var value))
+                {
+                    var validationContext = new ValidationContext<object?>(value);
+                    var result = await validator.ValidateAsync(validationContext, context.HttpContext.RequestAborted);
 
-                ValidationContext<object?> newValidation = new ValidationContext<object?>(value);
-                CancellationToken requestAborted = context.HttpContext.RequestAborted;
-
-                var result = await validator.ValidateAsync(newValidation, requestAborted);
-
-                if (result.IsValid is false)
-                    result.AddToModelState(context.ModelState, null);
+                    if (!result.IsValid)
+                        result.AddToModelState(context.ModelState, null);
+                    
+                }
             }
 
         }

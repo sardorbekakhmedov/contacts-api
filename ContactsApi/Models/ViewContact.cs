@@ -10,4 +10,5 @@ public class ViewContact
     public string? Address { get; set; }
     public DateTime CreateAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public List<string>? Tags { get; set; } 
 }
