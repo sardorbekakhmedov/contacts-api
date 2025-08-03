@@ -1,6 +1,6 @@
-namespace ContactsApi.Models;
+namespace ContactsApi.Dtos;
 
-public class Contact
+public class ViewContact
 {
     public Guid Id { get; set; }
     public required string FirstName { get; set; }

@@ -1,22 +1,61 @@
-namespace ContactsApi.Controllers;
-
+using AutoMapper;
+using ContactsApi.Dtos;
+using ContactsApi.Helper.Contacts;
+using ContactsApi.Models;
+using ContactsApi.Services.Contacts;
 using Microsoft.AspNetCore.Mvc;
 
+namespace ContactsApi.Controllers;
 
-public class ContactsController : ControllerBase
+[ApiController]
+[Route("api/[controller]")]
+public class ContactsController(
+    IMapper mapper,
+    IContactService contactService) : ControllerBase
 {
     [HttpGet]
-    public IActionResult GetContacts()
+    public async ValueTask<IActionResult> GetAll([FromQuery] ContactQueryParams queryParams, CancellationToken cancellationToken)
     {
-        // Logic to retrieve contacts would go here
-        return Ok(new { Message = "List of contacts" });
+        var result = await contactService.GetAllAsync(queryParams, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async ValueTask<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var contact = await contactService.GetSingleAsync(id, cancellationToken);
+        return Ok(contact);
     }
 
     [HttpPost]
-    public IActionResult AddContact([FromBody] string contact)
+    public async ValueTask<IActionResult> Create([FromBody] CreateContactDto dto, CancellationToken cancellationToken)
     {
-        // Logic to add a new contact would go here
-        return CreatedAtAction(nameof(GetContacts), new { Message = "Contact added successfully" });
+        var model = mapper.Map<CreateContact>(dto);
+
+        var newId = await contactService.CreateAsync(model, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = newId }, new { id = newId });
+    }
+
+    [HttpPut("{id:guid}")]
+    public async ValueTask<IActionResult> Update(Guid id, [FromBody] UpdateContactDto dto, CancellationToken cancellationToken)
+    {
+        var model = mapper.Map<UpdateContact>(dto);
+        var updated = await contactService.UpdateAsync(id, model, cancellationToken);
+        return Ok(updated);
+    }
+
+    [HttpPatch("{id:guid}/phone-number")]
+    public async ValueTask<IActionResult> UpdatePhoneNumber(Guid id, [FromBody] PatchContactDto dto, CancellationToken cancellationToken)
+    {
+        var model = mapper.Map<PatchContact>(dto);
+        var updated = await contactService.UpdatePhoneNumberAsync(id, model, cancellationToken);
+        return Ok(updated);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async ValueTask<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await contactService.DeleteAsync(id, cancellationToken);
+        return NoContent();
     }
 }
-

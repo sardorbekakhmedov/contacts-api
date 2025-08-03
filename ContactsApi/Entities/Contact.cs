@@ -1,6 +1,6 @@
-namespace ContactsApi.Dtos;
+namespace ContactsApi.Entities;
 
-public class ContactDto
+public class Contact
 {
     public Guid Id { get; set; }
     public required string FirstName { get; set; }
