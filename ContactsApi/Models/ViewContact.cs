@@ -1,4 +1,4 @@
-namespace ContactsApi.Dtos;
+namespace ContactsApi.Models;
 
 public class ViewContact
 {
@@ -10,5 +10,5 @@ public class ViewContact
     public string? Address { get; set; }
     public DateTime CreateAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
-    public List<CreateOrUpdateorViewContactTag>? Tags { get; set; } 
+    public List<CreateOrUpdateOrViewContactTag>? Tags { get; set; } 
 }

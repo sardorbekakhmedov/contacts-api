@@ -26,8 +26,8 @@ builder.Services.AddScoped<IValidator<UpdateContactDto>, UpdateContactValidator>
 builder.Services.AddScoped<IValidator<PatchContactDto>, PatchContactValidator>();
 
 builder.Services.AddDbContext<ContactsContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")))
-    .UseSnakeCaseNamingConvention();
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+        .UseSnakeCaseNamingConvention());
 
 var app = builder.Build();
 

@@ -21,7 +21,7 @@ public class ContactService(IMapper mapper) : IContactService
         return contacts.Any(c => c.PhoneNumber.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase));
     }
 
-    public async ValueTask<bool> ExistsEmailAsync(string email, Guid? excludeId = null, CancellationToken cancellationToken = default)
+    public async ValueTask<bool> ExistsEmailAsync(string email, int? excludeId = null, CancellationToken cancellationToken = default)
     {
         await Task.Yield();
 
@@ -43,7 +43,7 @@ public class ContactService(IMapper mapper) : IContactService
 
         var newContact = mapper.Map<Contact>(model);
         newContact.Id = Guid.NewGuid();
-        newContact.CreateAt = DateTime.Now;
+        newContact.CreatedAt = DateTime.Now;
 
         contacts.Add(newContact);
 
