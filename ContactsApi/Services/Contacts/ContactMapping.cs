@@ -16,5 +16,9 @@ public class ContactMapping : Profile
         CreateMap<CreateContact, Contact>();
         CreateMap<UpdateContact, Contact>();
         CreateMap<Contact, ViewContact>();
+
+        CreateMap<CreateOrUpdateorViewContactTagDto, CreateOrUpdateorViewContactTag>();
+        CreateMap<CreateOrUpdateorViewContactTag, ContactTag>();
+
     }
 }
