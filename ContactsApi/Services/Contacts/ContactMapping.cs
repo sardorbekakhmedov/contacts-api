@@ -18,7 +18,8 @@ public class ContactMapping : Profile
         CreateMap<Contact, ViewContact>();
 
         CreateMap<CreateOrUpdateContactTagDto, CreateOrUpdateOrViewContactTag>();
-        CreateMap<CreateOrUpdateOrViewContactTag, ContactTag>().ReverseMap();
+        CreateMap<CreateOrUpdateOrViewContactTag, ContactTag>();
+        CreateMap<ContactTag, ViewContactTag>().ReverseMap();
 
     }
 }

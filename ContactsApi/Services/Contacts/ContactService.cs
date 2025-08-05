@@ -1,24 +1,23 @@
 using AutoMapper;
-using ContactsApi.Dtos;
+using ContactsApi.Data.Contexts;
 using ContactsApi.Entities;
 using ContactsApi.Exceptions;
 using ContactsApi.Helper.Contacts;
 using ContactsApi.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ContactsApi.Services.Contacts;
 
-public class ContactService(IMapper mapper) : IContactService
+public class ContactService(
+    ContactsDbContext dcContext, 
+    IMapper mapper) : IContactService
 {
-    public static List<Contact> contacts = new();
-
-    public async ValueTask<bool> ExistsPhoneNumberAsync(string phoneNumber, Guid? excludeId = null, CancellationToken cancellationToken = default)
+    public async ValueTask<bool> ExistsPhoneNumberAsync(string phoneNumber, int? excludeId = null, CancellationToken cancellationToken = default)
     {
-        await Task.Yield();
-        
         if (excludeId is not null)
-            return contacts.Any(c => c.PhoneNumber.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase) && c.Id != excludeId);
+            return await dcContext.Contacts.AnyAsync(c => c.PhoneNumber.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase) && c.Id != excludeId, cancellationToken);
 
-        return contacts.Any(c => c.PhoneNumber.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase));
+        return await dcContext.Contacts.AnyAsync(c => c.PhoneNumber.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase), cancellationToken);
     }
 
     public async ValueTask<bool> ExistsEmailAsync(string email, int? excludeId = null, CancellationToken cancellationToken = default)
@@ -26,15 +25,13 @@ public class ContactService(IMapper mapper) : IContactService
         await Task.Yield();
 
         if(excludeId is not null)
-            return contacts.Any(c => c.Email.Equals(email, StringComparison.OrdinalIgnoreCase) && c.Id != excludeId);
+            return await dcContext.Contacts.AnyAsync(c => c.Email.Equals(email, StringComparison.OrdinalIgnoreCase) && c.Id != excludeId, cancellationToken);
 
-        return contacts.Any(c => c.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
+        return await dcContext.Contacts.AnyAsync(c => c.Email.Equals(email, StringComparison.OrdinalIgnoreCase), cancellationToken);
     }
 
     public async ValueTask<Guid> CreateAsync(CreateContact model, CancellationToken cancellationToken = default)
     {
-        await Task.Yield();
-
         if (await ExistsEmailAsync(model.Email, null, cancellationToken))
             throw new CustomConflictException($"Email '{model.Email}' is already in use.");
 
@@ -42,10 +39,10 @@ public class ContactService(IMapper mapper) : IContactService
             throw new CustomConflictException($"Phone number '{model.PhoneNumber}' is already in use.");
 
         var newContact = mapper.Map<Contact>(model);
-        newContact.Id = Guid.NewGuid();
-        newContact.CreatedAt = DateTime.Now;
+        newContact.CreatedAt = DateTimeOffset.Now;
 
-        contacts.Add(newContact);
+        dcContext.Contacts.Add(newContact);
+        dbCo
 
         return newContact.Id;
     }

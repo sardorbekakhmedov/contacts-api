@@ -25,7 +25,7 @@ builder.Services.AddScoped<IValidator<CreateContactDto>, CreateContactValidator>
 builder.Services.AddScoped<IValidator<UpdateContactDto>, UpdateContactValidator>();
 builder.Services.AddScoped<IValidator<PatchContactDto>, PatchContactValidator>();
 
-builder.Services.AddDbContext<ContactsContext>(options =>
+builder.Services.AddDbContext<ContactsDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
         .UseSnakeCaseNamingConvention());
 
