@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ContactsApi.Data.Contexts;
 
-public class ContactsDbContext : DbContext
+public class ContactsDbContext(DbContextOptions<ContactsDbContext> options) : DbContext(options)
 {
     public DbSet<Contact> Contacts { get; set; }
     public DbSet<ContactTag> ContactTags { get; set; }

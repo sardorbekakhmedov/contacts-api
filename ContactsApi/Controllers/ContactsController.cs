@@ -21,7 +21,7 @@ public class ContactsController(
     }
 
     [HttpGet("{id:guid}")]
-    public async ValueTask<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    public async ValueTask<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var contact = await contactService.GetSingleAsync(id, cancellationToken);
         return Ok(contact);
@@ -37,7 +37,7 @@ public class ContactsController(
     }
 
     [HttpPut("{id:guid}")]
-    public async ValueTask<IActionResult> Update(Guid id, [FromBody] UpdateContactDto dto, CancellationToken cancellationToken)
+    public async ValueTask<IActionResult> Update(int id, [FromBody] UpdateContactDto dto, CancellationToken cancellationToken)
     {
         var model = mapper.Map<UpdateContact>(dto);
         var updated = await contactService.UpdateAsync(id, model, cancellationToken);
@@ -45,7 +45,7 @@ public class ContactsController(
     }
 
     [HttpPatch("{id:guid}/phone-number")]
-    public async ValueTask<IActionResult> UpdatePhoneNumber(Guid id, [FromBody] PatchContactDto dto, CancellationToken cancellationToken)
+    public async ValueTask<IActionResult> UpdatePhoneNumber(int id, [FromBody] PatchContactDto dto, CancellationToken cancellationToken)
     {
         var model = mapper.Map<PatchContact>(dto);
         var updated = await contactService.UpdatePhoneNumberAsync(id, model, cancellationToken);
@@ -53,7 +53,7 @@ public class ContactsController(
     }
 
     [HttpDelete("{id:guid}")]
-    public async ValueTask<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    public async ValueTask<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         await contactService.DeleteAsync(id, cancellationToken);
         return NoContent();

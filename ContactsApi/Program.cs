@@ -4,6 +4,7 @@ using ContactsApi.Data.Contexts;
 using ContactsApi.Extensions;
 using FluentValidation;
 using ContactsApi.Dtos;
+using ContactsApi.Repositories;
 using ContactsApi.Validators;
 using ContactsApi.Services.Contacts;
 using Microsoft.EntityFrameworkCore;using EFCore.NamingConventions;
@@ -20,7 +21,8 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
-builder.Services.AddSingleton<IContactService, ContactService>();
+builder.Services.AddScoped<IContactRepository, ContactRepository>();
+builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<IValidator<CreateContactDto>, CreateContactValidator>();
 builder.Services.AddScoped<IValidator<UpdateContactDto>, UpdateContactValidator>();
 builder.Services.AddScoped<IValidator<PatchContactDto>, PatchContactValidator>();

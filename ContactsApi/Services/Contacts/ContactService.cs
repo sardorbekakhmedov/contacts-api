@@ -1,149 +1,90 @@
 using AutoMapper;
-using ContactsApi.Data.Contexts;
 using ContactsApi.Entities;
 using ContactsApi.Exceptions;
 using ContactsApi.Helper.Contacts;
 using ContactsApi.Models;
-using Microsoft.EntityFrameworkCore;
+using ContactsApi.Repositories;
 
 namespace ContactsApi.Services.Contacts;
 
 public class ContactService(
-    ContactsDbContext dcContext, 
+    IContactRepository repository,
     IMapper mapper) : IContactService
 {
-    public async ValueTask<bool> ExistsPhoneNumberAsync(string phoneNumber, int? excludeId = null, CancellationToken cancellationToken = default)
+    public async ValueTask<int> CreateAsync(CreateContact model, CancellationToken cancellationToken = default)
     {
-        if (excludeId is not null)
-            return await dcContext.Contacts.AnyAsync(c => c.PhoneNumber.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase) && c.Id != excludeId, cancellationToken);
-
-        return await dcContext.Contacts.AnyAsync(c => c.PhoneNumber.Equals(phoneNumber, StringComparison.OrdinalIgnoreCase), cancellationToken);
-    }
-
-    public async ValueTask<bool> ExistsEmailAsync(string email, int? excludeId = null, CancellationToken cancellationToken = default)
-    {
-        await Task.Yield();
-
-        if(excludeId is not null)
-            return await dcContext.Contacts.AnyAsync(c => c.Email.Equals(email, StringComparison.OrdinalIgnoreCase) && c.Id != excludeId, cancellationToken);
-
-        return await dcContext.Contacts.AnyAsync(c => c.Email.Equals(email, StringComparison.OrdinalIgnoreCase), cancellationToken);
-    }
-
-    public async ValueTask<Guid> CreateAsync(CreateContact model, CancellationToken cancellationToken = default)
-    {
-        if (await ExistsEmailAsync(model.Email, null, cancellationToken))
+        if (await repository.ExistsEmailAsync(model.Email, null, cancellationToken))
             throw new CustomConflictException($"Email '{model.Email}' is already in use.");
 
-        if (await ExistsPhoneNumberAsync(model.PhoneNumber, null, cancellationToken))
+        if (await repository.ExistsPhoneNumberAsync(model.PhoneNumber, null, cancellationToken))
             throw new CustomConflictException($"Phone number '{model.PhoneNumber}' is already in use.");
 
-        var newContact = mapper.Map<Contact>(model);
-        newContact.CreatedAt = DateTimeOffset.Now;
+        var contact = mapper.Map<Contact>(model);
+        contact.CreatedAt = DateTimeOffset.Now;
 
-        dcContext.Contacts.Add(newContact);
-        dbCo
-
-        return newContact.Id;
+        return await repository.CreateAsync(contact, cancellationToken);
     }
 
     public async ValueTask<IEnumerable<ViewContact>> GetAllAsync(ContactQueryParams queryParams, CancellationToken cancellationToken = default)
     {
-        await Task.Yield();
-
         if (queryParams.Take > 100)
             throw new CustomBadRequestException("Max number of results (take) cannot exceed 100.");
 
-        var query = contacts.AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(queryParams.FirstName))
-            query = query.Where(c => c.FirstName.ToLower().Contains(queryParams.FirstName.ToLower(), StringComparison.OrdinalIgnoreCase));
-
-        if (!string.IsNullOrWhiteSpace(queryParams.LastName))
-            query = query.Where(c => c.LastName.ToLower().Contains(queryParams.LastName.ToLower(), StringComparison.OrdinalIgnoreCase));
-
-        if (!string.IsNullOrWhiteSpace(queryParams.Email))
-            query = query.Where(c => c.Email.ToLower().Contains(queryParams.Email.ToLower(), StringComparison.OrdinalIgnoreCase));
-
-        if (!string.IsNullOrWhiteSpace(queryParams.PhonNumber))
-            query = query.Where(c => c.PhoneNumber.ToLower().Contains(queryParams.PhonNumber.ToLower(), StringComparison.OrdinalIgnoreCase));
-            
-        if (!string.IsNullOrWhiteSpace(queryParams.Tag))
-        {
-            query = query.Where(c => c.Tags.Contains(queryParams.Tag, StringComparer.OrdinalIgnoreCase));
-        }
-
-        if (!string.IsNullOrEmpty(queryParams.SortBy))
-        {
-            query = queryParams.SortBy.ToLower() switch
-            {
-                "firstname" => queryParams.SortOrder == "desc"
-                                ? query.OrderByDescending(c => c.FirstName)
-                                : query.OrderBy(c => c.FirstName),
-                "createdat" => queryParams.SortOrder == "desc"
-                                ? query.OrderByDescending(c => c.CreateAt)
-                                : query.OrderBy(c => c.CreateAt),
-                _ => query
-            };
-        }
-
-        var pagedContacts = query
-            .Skip(queryParams.Skip)
-            .Take(queryParams.Take)
-            .ToList();
-
-        return mapper.Map<List<ViewContact>>(pagedContacts);
+        var contacts = await repository.GetPagedAsync(queryParams, cancellationToken);
+        return mapper.Map<List<ViewContact>>(contacts);
     }
 
-    public async ValueTask<ViewContact> GetSingleOrDefaultAsync(Guid id, CancellationToken cancellationToken = default)
+    public async ValueTask<ViewContact?> GetSingleOrDefaultAsync(int id, CancellationToken cancellationToken = default)
     {
-        await Task.Yield();
-
-        var contact = contacts.SingleOrDefault(c => c.Id == id);
-
-        return mapper.Map<ViewContact>(contact);
-    }
-
-    public async ValueTask<ViewContact> GetSingleAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        var contact = await GetSingleOrDefaultAsync(id, cancellationToken) ??
-            throw new CustomNotFoundException($"{nameof(Contact)} with id '{id}' not found.");
-
-        return mapper.Map<ViewContact>(contact);
-    }
-
-    public async ValueTask<ViewContact> UpdateAsync(Guid id, UpdateContact model, CancellationToken cancellationToken = default)
-    {
-        await Task.Yield();
-
-        var contactToUpdate = contacts.SingleOrDefault(c => c.Id == id) ??
-            throw new CustomNotFoundException($"{nameof(Contact)} with id '{id}' not found."); 
-
-        mapper.Map(model, contactToUpdate);
-        contactToUpdate.UpdatedAt = DateTime.Now;
-
-        return mapper.Map<ViewContact>(contactToUpdate);
-    }
-
-    public async ValueTask<ViewContact> UpdatePhoneNumberAsync(Guid id, PatchContact model, CancellationToken cancellationToken = default)
-    {
-        await Task.Yield();
-
-        var contactToUpdate = contacts.SingleOrDefault(c => c.Id == id) ??
-            throw new CustomNotFoundException($"{nameof(Contact)} with id '{id}' not found.");
-
-        contactToUpdate.PhoneNumber = model.PhoneNumber;
-        contactToUpdate.UpdatedAt = DateTime.Now;
-        return mapper.Map<ViewContact>(contactToUpdate);
+        var contact = await repository.GetByIdAsync(id, cancellationToken);
+        return contact is null ? null : mapper.Map<ViewContact>(contact);
     }
     
-    public async ValueTask DeleteAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        await Task.Yield();
-        
-        var contactToDelete = contacts.SingleOrDefault(c => c.Id == id) ??
-            throw new CustomNotFoundException($"{nameof(Contact)} with id '{id}' not found.");
 
-        contacts.Remove(contactToDelete);
+    public async ValueTask<ViewContact> GetSingleAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var contact = await repository.GetByIdAsync(id, cancellationToken) ??
+            throw new CustomNotFoundException($"Contact with id '{id}' not found.");
+
+        return mapper.Map<ViewContact>(contact);
+    }
+
+    public async ValueTask<ViewContact> UpdateAsync(int id, UpdateContact model, CancellationToken cancellationToken = default)
+    {
+        var contact = await repository.GetByIdAsync(id, cancellationToken) ??
+            throw new CustomNotFoundException($"Contact with id '{id}' not found.");
+
+        mapper.Map(model, contact);
+        contact.UpdatedAt = DateTimeOffset.Now;
+
+        var updated = await repository.UpdateAsync(contact, cancellationToken);
+        return mapper.Map<ViewContact>(updated);
+    }
+
+    public async ValueTask<ViewContact> UpdatePhoneNumberAsync(int id, PatchContact model, CancellationToken cancellationToken = default)
+    {
+        var contact = await repository.GetByIdAsync(id, cancellationToken) ??
+            throw new CustomNotFoundException($"Contact with id '{id}' not found.");
+
+        contact.PhoneNumber = model.PhoneNumber;
+        contact.UpdatedAt = DateTimeOffset.Now;
+
+        var updated = await repository.UpdateAsync(contact, cancellationToken);
+        return mapper.Map<ViewContact>(updated);
+    }
+
+    public async ValueTask<bool> ExistsPhoneNumberAsync(string phoneNumber, int? excludeId = null, CancellationToken cancellationToken = default)
+        => await repository.ExistsPhoneNumberAsync(phoneNumber, excludeId, cancellationToken);
+    
+
+    public async ValueTask<bool> ExistsEmailAsync(string email, int? excludeId = null, CancellationToken cancellationToken = default) 
+        => await repository.ExistsEmailAsync(email, excludeId, cancellationToken);
+
+    
+    public async ValueTask DeleteAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var result = await repository.DeleteAsync(id, cancellationToken);
+        if (result == 0)
+            throw new CustomNotFoundException($"Contact with id '{id}' not found.");
     }
 }

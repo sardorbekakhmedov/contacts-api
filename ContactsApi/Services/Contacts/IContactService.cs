@@ -9,15 +9,15 @@ namespace ContactsApi.Services.Contacts;
 
 public interface IContactService
 {
-    ValueTask<Guid> CreateAsync(CreateContact model, CancellationToken cancellationToken = default);
+    ValueTask<int> CreateAsync(CreateContact model, CancellationToken cancellationToken = default);
     ValueTask<IEnumerable<ViewContact>> GetAllAsync(ContactQueryParams queryParams, CancellationToken cancellationToken = default);
-    ValueTask<ViewContact> GetSingleOrDefaultAsync(Guid id, CancellationToken cancellationToken = default);
-    ValueTask<ViewContact> GetSingleAsync(Guid id, CancellationToken cancellationToken = default);
-    ValueTask<ViewContact> UpdateAsync(Guid id, UpdateContact model, CancellationToken cancellationToken = default);
-    ValueTask<ViewContact> UpdatePhoneNumberAsync(Guid id, PatchContact model, CancellationToken cancellationToken = default);
+    ValueTask<ViewContact?> GetSingleOrDefaultAsync(int id, CancellationToken cancellationToken = default);
+    ValueTask<ViewContact> GetSingleAsync(int id, CancellationToken cancellationToken = default);
+    ValueTask<ViewContact> UpdateAsync(int id, UpdateContact model, CancellationToken cancellationToken = default);
+    ValueTask<ViewContact> UpdatePhoneNumberAsync(int id, PatchContact model, CancellationToken cancellationToken = default);
 
     ValueTask<bool> ExistsPhoneNumberAsync(string phoneNumber, int? excludeId = null,
         CancellationToken cancellationToken = default);
     ValueTask<bool> ExistsEmailAsync(string email, int? excludeId = null, CancellationToken cancellationToken = default);
-    ValueTask DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    ValueTask DeleteAsync(int id, CancellationToken cancellationToken = default);
 }
