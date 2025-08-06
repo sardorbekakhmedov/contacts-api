@@ -33,10 +33,8 @@ public class CreateContactValidator : AbstractValidator<CreateContactDto>
             .WithMessage("Invalid email format.")
             .MaximumLength(100)
             .WithMessage("Email must not exceed 100 characters.")
-            .MustAsync(async (email, cancellationToken) =>
-            {
-                return !await contactService.ExistsEmailAsync(email, null, cancellationToken);
-            })
+            .MustAsync(async (email, cancellationToken) 
+                => !await contactService.ExistsEmailAsync(email, null, cancellationToken))
             .WithMessage($"This email is already in use.");
 
         RuleFor(x => x.PhoneNumber)
@@ -44,10 +42,8 @@ public class CreateContactValidator : AbstractValidator<CreateContactDto>
             .Length(12).WithMessage("Phone number must be exactly 12 digits long.")
             .Matches(@"^998\d{9}$")
             .WithMessage("Phone number must start with 998, digits only — no '+' (e.g., 998901234567).")
-            .MustAsync(async (phoneNumber, cancellationToken) =>
-            {
-                return !await contactService.ExistsPhoneNumberAsync(phoneNumber, null, cancellationToken);
-            })
+            .MustAsync(async (phoneNumber, cancellationToken) 
+                => !await contactService.ExistsPhoneNumberAsync(phoneNumber, null, cancellationToken))
             .WithMessage($"This phoneNumber is already in use.");;
 
         RuleFor(contact => contact.Address)

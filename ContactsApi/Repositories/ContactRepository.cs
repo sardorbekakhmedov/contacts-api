@@ -1,7 +1,9 @@
 using ContactsApi.Data.Contexts;
 using ContactsApi.Entities;
+using ContactsApi.Exceptions;
 using ContactsApi.Helper.Contacts;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace ContactsApi.Repositories;
 
@@ -68,16 +70,30 @@ public class ContactRepository(ContactsDbContext dbContext) : IContactRepository
 
     public async ValueTask<int> CreateAsync(Contact contact, CancellationToken cancellationToken = default)
     {
-        dbContext.Contacts.Add(contact);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return contact.Id;
+        try
+        {
+            dbContext.Contacts.Add(contact);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return contact.Id;
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505" }) // 23505 = unique constraint failed
+        {
+            throw new CustomConflictException("PhoneNumber and Email must be unique!");
+        }
     }
 
     public async ValueTask<Contact> UpdateAsync(Contact contact, CancellationToken cancellationToken = default)
     {
-        dbContext.Contacts.Update(contact);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return contact;
+        try
+        {
+            dbContext.Contacts.Update(contact);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return contact;
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505" }) // 23505 = unique constraint failed
+        {
+            throw new CustomConflictException("PhoneNumber and Email must be unique!");
+        }
     }
 
     public async ValueTask<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
